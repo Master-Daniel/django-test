@@ -52,4 +52,4 @@ MILES_PER_GALLON = 10
 # OSRM base URL (public demo server)
 OSRM_BASE_URL = 'https://router.project-osrm.org'
 # Fuel prices CSV path (relative to BASE_DIR)
-FUEL_PRICES_CSV = BASE_DIR / 'data' / 'fuel_prices.csv'
+FUEL_PRICES_CSV = BASE_DIR / 'data' / 'fuel-prices-for-be-assessment.csv'

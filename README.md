@@ -31,8 +31,8 @@ API base: `http://127.0.0.1:8000/api/`
 
 - **Parameters:** `start_lat`, `start_lon`, `end_lat`, `end_lon` (all required; USA coordinates).
 - **Response:**
-  - **`map`** – GeoJSON `FeatureCollection`: route line + fuel stop points (for rendering a map).
-  - **`fuel_stops`** – List of optimal fuel stops (lat, lon, price, gallons, cost, etc.).
+  - **`map_routes`** – Route points as objects with explicit `latitude` and `longitude`.
+  - **`fuel_stops`** – List of optimal fuel stops (`latitude`, `longitude`, price, gallons, cost, etc.).
   - **`route_summary`** – `total_distance_miles`, `total_fuel_cost_usd`, `miles_per_gallon`, `vehicle_range_miles`.
 
 ### Example (GET)
@@ -55,22 +55,22 @@ GET http://127.0.0.1:8000/api/route/?start_lat=37.77&start_lon=-122.42&end_lat=4
 ## Map & Routing
 
 - **Routing:** One call to **OSRM** (public demo: `router.project-osrm.org`) to get the full route and geometry. No API key required; use a single request per route.
-- **Map:** The response `map` field is standard GeoJSON you can draw in any map library (Leaflet, Mapbox, etc.).
+- **Route Path:** The response `map_routes` contains explicit `{ "latitude": ..., "longitude": ... }` objects.
 
 ## Fuel Prices
 
-- Fuel prices are read from **`data/fuel_prices.csv`**.
+- Fuel prices are read from **`data/fuel-prices-for-be-assessment.csv`**.
 - **CSV format (with header):**  
   `state,city,lat,lon,price_per_gallon,name`  
   or: `lat,lon,price_per_gallon,name`
-- Replace or edit `data/fuel_prices.csv` with your own list of fuel prices. A sample file with USA cities is included.
+- The assessment file format (`OPIS Truckstop ID,...,Retail Price`) is supported directly.
+- City/state rows are deduplicated to the cheapest price.
+- If `data/geocode_cache.json` exists, cached coordinates are used for proximity matching.
 
 ## Design Notes
 
 - **Speed:** One OSRM request per route; fuel data is loaded once and cached in memory.
+- No live geocoding is done during API requests, which keeps latency low and predictable.
 - **Optimal fuel:** For each planned refuel (every 400 miles), the code picks the **cheapest** station within ~35 miles of that point on the route.
 - **Vehicle:** 500-mile range, refuel at 400 miles, 10 MPG (configurable in `config/settings.py`).
 
-## Loom / Postman
-
-Use Postman (or similar) to call `GET` or `POST` `/api/route/` with the parameters above and show the JSON response (map GeoJSON, fuel_stops, total_fuel_cost_usd). Record a short (≤5 min) Loom walking through the request and a quick code overview.

@@ -98,33 +98,32 @@ class RouteFuelView(View):
                 total_fuel_cost_usd = 0.0
         else:
             total_fuel_cost_usd = round(sum(s['cost'] for s in fuel_stops), 2)
-        # GeoJSON map: route as FeatureCollection (route line + fuel stop points)
-        geometry = route_data.get('geometry') or {}
-        map_geojson = {
-            'type': 'FeatureCollection',
-            'features': [
-                {
-                    'type': 'Feature',
-                    'properties': {'type': 'route'},
-                    'geometry': geometry,
-                },
-                *[
-                    {
-                        'type': 'Feature',
-                        'properties': {'type': 'fuel_stop', 'name': s['name'], 'cost': s['cost']},
-                        'geometry': {'type': 'Point', 'coordinates': [s['lon'], s['lat']]},
-                    }
-                    for s in fuel_stops
-                ],
-            ],
-        }
+        # Always return route path with explicit latitude/longitude objects.
+        route_coordinates = [
+            {'latitude': lat, 'longitude': lon}
+            for lon, lat, _ in coords_with_distance
+        ]
+        # Human-friendly fuel stop keys for API consumers.
+        response_fuel_stops = [
+            {
+                'latitude': s['lat'],
+                'longitude': s['lon'],
+                'price_per_gallon': s['price_per_gallon'],
+                'name': s['name'],
+                'gallons': s['gallons'],
+                'cost': s['cost'],
+                'miles_to_next': s['miles_to_next'],
+                'route_position_miles': s['route_position_miles'],
+            }
+            for s in fuel_stops
+        ]
         return JsonResponse({
-            'map': map_geojson,
+            'map_routes': route_coordinates,
             'route_summary': {
                 'total_distance_miles': round(total_distance_miles, 2),
                 'total_fuel_cost_usd': total_fuel_cost_usd,
                 'miles_per_gallon': mpg,
                 'vehicle_range_miles': getattr(settings, 'VEHICLE_RANGE_MILES', 500),
             },
-            'fuel_stops': fuel_stops,
+            'fuel_stops': response_fuel_stops,
         })
